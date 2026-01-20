@@ -1,39 +1,32 @@
 import Joi from 'joi';
 
-const userSchema = Joi.object({
+const updateUserSchema = Joi.object({
     username: Joi.string()
         .min(3)
         .max(50)
         .alphanum()
-        .required()
         .messages({
             'string.alphanum': 'Username must only contain alpha-numeric characters'
         }),
     
     name: Joi.string()
         .min(3)
-        .max(150)
-        .required()
-        .messages({
-            'string.empty': 'Name cannot be empty'
-        }),
+        .max(150),
     
     email: Joi.string()
         .email()
-        .max(255)
-        .required(),
+        .max(255),
 
     password: Joi.string()
         .min(8)
-        .max(255)
-        .required(),
+        .max(255),
 
     role: Joi.string()
-        .required()
         .valid('staff','administrator')
 })
+.min(1)
 .options({
     stripUnknown: true
 });
 
-export default userSchema;
+export default updateUserSchema;

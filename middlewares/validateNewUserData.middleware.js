@@ -1,6 +1,6 @@
 import userSchema from '../validators/user.schema.js';
 
-const validateUserData = async (req, res, next) => {
+const validateNewUserData = async (req, res, next) => {
     const { error, value } = userSchema.validate(req.body, { abortEarly: false });
 
     if (error) {
@@ -14,4 +14,4 @@ const validateUserData = async (req, res, next) => {
     next();
 };
 
-export default validateUserData;
+export default validateNewUserData;

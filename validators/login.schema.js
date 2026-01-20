@@ -3,16 +3,18 @@ import Joi from 'joi';
 const loginSchema = Joi.object({
     username: Joi.string()
         .alphanum()
-        .min(3)
-        .max(255)
+        .max(50)
         .required()
         .messages({
-            "string.alphanum": "Username must only contain alpha-numeric characters"
+            'string.alphanum': 'Username must only contain alpha-numeric characters'
         }),
 
     password: Joi.string()
-        .pattern(/^[^\s]{6,255}$/)
+        .max(255)
         .required()
+})
+.options({
+    stripUnknown: true
 });
 
 export default loginSchema;
