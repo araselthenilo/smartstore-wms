@@ -16,6 +16,17 @@ const Supplier = db.define(
         contact_person: {
             type: DataTypes.STRING(50),
             allowNull: false
+        },
+        email: {
+            type: DataTypes.STRING(255),
+            allowNull: false,
+            validate: {
+                isEmail: true
+            }
+        },
+        address: {
+            type: DataTypes.TEXT,
+            allowNull: false
         }
     },
     {

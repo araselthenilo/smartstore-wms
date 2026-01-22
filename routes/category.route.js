@@ -18,14 +18,14 @@ const {
 
 const categoryRoute = Router();
 
-userRoute.get('/deleted', verifyToken, verifyAdminRole, getAllDeletedCategories);
-userRoute.get('/deleted/:id', verifyToken, verifyAdminRole, getDeletedCategoryByID);
-userRoute.post('/restore/:id', verifyToken, verifyAdminRole, restoreDeletedCategoryByID);
+categoryRoute.get('/deleted', verifyToken, verifyAdminRole, getAllDeletedCategories);
+categoryRoute.get('/deleted/:id', verifyToken, verifyAdminRole, getDeletedCategoryByID);
+categoryRoute.post('/restore/:id', verifyToken, verifyAdminRole, restoreDeletedCategoryByID);
 
-userRoute.post('/', verifyToken, verifyAdminRole, validateNewCategoryData, createCategory);
-userRoute.get('/', verifyToken, verifyAdminRole, getAllCategories);
-userRoute.get('/:id', verifyToken, verifyAdminRole, getCategoryByID);
-userRoute.patch('/:id', verifyToken, verifyAdminRole, validateUpdateCategoryData, updateCategoryByID);
-userRoute.delete('/:id', verifyToken, verifyAdminRole, deleteCategoryByID);
+categoryRoute.post('/', verifyToken, verifyAdminRole, validateNewCategoryData, createCategory);
+categoryRoute.get('/', verifyToken, verifyAdminRole, getAllCategories);
+categoryRoute.get('/:id', verifyToken, verifyAdminRole, getCategoryByID);
+categoryRoute.patch('/:id', verifyToken, verifyAdminRole, validateUpdateCategoryData, updateCategoryByID);
+categoryRoute.delete('/:id', verifyToken, verifyAdminRole, deleteCategoryByID);
 
 export default categoryRoute;
