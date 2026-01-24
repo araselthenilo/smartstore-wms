@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import verifyToken from '../middlewares/verifyToken.middleware.js';
-import verifyAdminRole from '../middlewares/verifyAdminRole.middleware.js';
-import validateNewCategoryData from '../middlewares/validateNewCategoryData.middleware.js';
-import validateUpdateCategoryData from '../middlewares/validateUpdateCategoryData.middleware.js';
+import verifyToken from '../middlewares/auth/verifyToken.middleware.js';
+import verifyAdminRole from '../middlewares/auth/verifyAdminRole.middleware.js';
+import validateNewCategoryData from '../middlewares/category/validateNewCategoryData.middleware.js';
+import validateUpdateCategoryData from '../middlewares/category/validateUpdateCategoryData.middleware.js';
 import categoryController from '../controllers/category.controller.js';
 
 const {

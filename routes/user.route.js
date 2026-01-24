@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import verifyToken from '../middlewares/verifyToken.middleware.js';
-import verifyAdminRole from '../middlewares/verifyAdminRole.middleware.js';
-import validateNewUserData from '../middlewares/validateNewUserData.middleware.js';
-import validateUpdateUserData from '../middlewares/validateUpdateUserData.middleware.js';
+import verifyToken from '../middlewares/auth/verifyToken.middleware.js';
+import verifyAdminRole from '../middlewares/auth/verifyAdminRole.middleware.js';
+import validateNewUserData from '../middlewares/user/validateNewUserData.middleware.js';
+import validateUpdateUserData from '../middlewares/user/validateUpdateUserData.middleware.js';
 import userController from '../controllers/user.controller.js';
 
 const {

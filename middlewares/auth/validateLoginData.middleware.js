@@ -1,4 +1,4 @@
-import loginSchema from '../validators/login.schema.js';
+import loginSchema from '../../validators/auth/login.schema.js';
 
 const validateLoginData = async (req, res, next) => {
     const { error, value } = loginSchema.validate(req.body, { abortEarly: false });

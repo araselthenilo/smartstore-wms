@@ -22,32 +22,65 @@ for (const key of requiredEnv) {
 import db from './utils/db.util.js';
 import express, { json } from 'express';
 import cookieParser from 'cookie-parser';
+import swaggerJSDoc from 'swagger-jsdoc';
+import swaggerUI from 'swagger-ui-express';
 
 const app = express();
 
 import authRoute from './routes/auth.route.js';
 import userRoute from './routes/user.route.js';
+import productRoute from './routes/product.route.js';
 import categoryRoute from './routes/category.route.js';
 import supplierRoute from './routes/supplier.route.js';
-// import inventoryLogRoute from './routes/inventoryLog.route.js';
-// import purchaseOrderRoute from './routes/purchaseOrder.route.js';
-// import productRoute from './routes/product.route.js';
+import inventoryLogRoute from './routes/inventoryLog.route.js';
+import purchaseOrderRoute from './routes/purchaseOrder.route.js';
 
 app.use(json());
 app.use(cookieParser());
 
+const options = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'SmartStore WMS (Warehouse and Procurement) API Documentations',
+            version: '0.4.0'
+        },
+        servers: [
+            {
+                url: `http://${process.env.DB_HOST}:${process.env.API_PORT}/`
+            }
+        ]
+    },
+    apis: [
+        './index.js'
+    ]
+}
+
+const swaggerSpec = swaggerJSDoc(options);
+
+app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerSpec));
+
 /* Routes */
 app.use('/auth', authRoute);
 app.use('/users', userRoute);
-app.use('/categories', categoryRoute);
+app.use('/products', productRoute);
 app.use('/suppliers', supplierRoute);
-// app.use('/inventory-logs', inventoryLogRoute);
-// app.use('/purchase-orders', purchaseOrderRoute);
-// app.use('/products', productRoute);
-// app.use('/orders', orderRoute);
+app.use('/categories', categoryRoute);
+app.use('/inventory-logs', inventoryLogRoute);
+app.use('/purchase-orders', purchaseOrderRoute);
 /* End Routes */
 
 /* Root */
+/**
+ * @swagger
+ * /:
+ *  get:
+ *      summary: This API is used to test if the backend is working
+ *      description: This API is used to test if the backend is working
+ *      responses:
+ *          200:
+ *              description: To test API backend
+ */
 app.get('/', async (req, res) => {
     res.status(200).json({
         success: true,

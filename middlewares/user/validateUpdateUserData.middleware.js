@@ -1,4 +1,4 @@
-import updateUserSchema from '../validators/updateUser.schema.js';
+import updateUserSchema from '../../validators/user/updateUser.schema.js';
 
 const validateUpdateUserData = async (req, res, next) => {
     const { error, value } = updateUserSchema.validate(req.body, { abortEarly: false });

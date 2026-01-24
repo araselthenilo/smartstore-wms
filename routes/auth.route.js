@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import validateLoginData from '../middlewares/validateLoginData.middleware.js';
+import validateLoginData from '../middlewares/auth/validateLoginData.middleware.js';
 import authController from '../controllers/auth.controller.js';
 
 const { login, logout } = authController; 

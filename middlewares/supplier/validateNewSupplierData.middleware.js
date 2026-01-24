@@ -1,4 +1,4 @@
-import supplierSchema from '../validators/supplier.schema.js';
+import supplierSchema from '../../validators/supplier/supplier.schema.js';
 
 const validateNewSupplierData = async (req, res, next) => {
     const { error, value } = supplierSchema.validate(req.body, { abortEarly: false });

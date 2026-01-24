@@ -1,4 +1,4 @@
-import userSchema from '../validators/user.schema.js';
+import userSchema from '../../validators/user/user.schema.js';
 
 const validateNewUserData = async (req, res, next) => {
     const { error, value } = userSchema.validate(req.body, { abortEarly: false });

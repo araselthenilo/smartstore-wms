@@ -1,4 +1,4 @@
-import categorySchema from '../validators/category.schema.js';
+import categorySchema from '../../validators/category/category.schema.js';
 
 const validateNewCategoryData = async (req, res, next) => {
     const { error, value } = categorySchema.validate(req.body, { abortEarly: false });
