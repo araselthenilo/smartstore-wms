@@ -6,6 +6,16 @@ Aplikasi ini adalah layanan backend (REST API) untuk Sistem Manajemen Gudang (WM
 
 Sistem memisahkan hak akses antara **Administrator** (manajemen data & keuangan) dan **Staff** (operasional gudang & penerimaan barang). Keunggulan utama sistem ini meliputi integritas data menggunakan transaksi database atomik, keamanan berbasis token, dan audit trail yang lengkap.
 
+Jika ingin mencobanya, jangan lupa ganti `username`, `password`, serta `jwt_token` yang hendak dipakai.
+Terkait dokumentasi API lebih lengkap dapat diakses dengan, contoh:
+```plaintext
+DB_HOST=localhost
+API_PORT=3000
+
+Maka link yang dapat diakses adalah: http://localhost:3000/api-docs
+
+```
+
 ---
 
 ## Daftar Isi
@@ -145,7 +155,7 @@ src/
 
 ## Mekanisme Autentikasi
 
-1. **Login:** Klien mengirim `email` dan `password` ke endpoint `/api/auth/login`.  
+1. **Login:** Klien mengirim `username` dan `password` ke endpoint `/auth/login`.  
 2. **Verifikasi:** Server memverifikasi hash password. Jika valid, server menerbitkan **Access Token (JWT)**.  
 3. **Akses Resource:** Untuk mengakses endpoint yang dilindungi (mis. membuat PO atau menambah produk), klien wajib menyertakan header:
    ```
@@ -161,47 +171,56 @@ src/
 
 Berikut ringkasan endpoint utama yang tersedia.
 
-### A. Autentikasi (`/api/auth`)
+### A. Autentikasi (`/auth`)
 
-| Method | URL      | Deskripsi                          | Akses   |
-| ------ | -------- | ---------------------------------- | ------- |
-| POST   | /login   | Masuk ke sistem & dapatkan Token   | Public  |
-| GET    | /logout  | Keluar sistem (Client-side clear)  | Public  |
+| Method | URL      | Deskripsi                          | Akses       |
+| ------ | -------- | ---------------------------------- | ------------|
+| POST   | /login   | Masuk ke sistem & dapatkan Token   | Public      |
+| GET    | /logout  | Keluar sistem (Client-side clear)  | Public      |
+| GET    | /profile | Mengambil data diri akun           | Sudah Login |
 
 ---
 
 ### B. Master Data (Produk, Kategori, Supplier)  
-Base URLs: `/api/products`, `/api/categories`, `/api/suppliers`
+Base URLs: `/users`, `/products`, `/categories`, `/suppliers`
 
-| Method | Endpoint       | Body (JSON)         | Deskripsi                         |
-| ------ | -------------- | ------------------- | ----------------------------------|
-| GET    | `/`            | -                   | Mengambil semua data aktif        |
-| GET    | `/:id`         | -                   | Mengambil detail per ID           |
-| POST   | `/`            | `{ name, ... }`     | Membuat data baru (Admin Only)    |
-| PATCH  | `/:id`         | `{ field_to_update }` | Update sebagian (Admin Only)    |
-| DELETE | `/:id`         | -                   | Soft delete (Admin Only)          |
-| GET    | `/deleted`     | -                   | Melihat data di "Trash Bin" (Admin Only) |
-| POST   | `/restore/:id` | -                   | Mengembalikan data yang dihapus (Admin Only) |
+| Method | Endpoint       | Body (JSON)           | Deskripsi                         |
+| ------ | -------------- | -------------------   | ----------------------------------|
+| GET    | `/`            | -                     | Mengambil semua data aktif        |
+| GET    | `/:id`         | -                     | Mengambil detail per ID           |
+| POST   | `/`            | `{ name, ... }`       | Membuat data baru (Admin Only)    |
+| PATCH  | `/:id`         | `{ field_to_update }` | Update sebagian (Admin Only)      |
+| DELETE | `/:id`         | -                     | Soft delete (Admin Only)          |
+| GET    | `/deleted`     | -                     | Melihat semua data di "Trash Bin" (Admin Only) |
+| GET    | `/deleted/:id` | -                     | Melihat satu di "Trash Bin" (Admin Only) |
+| POST   | `/restore/:id` | -                     | Mengembalikan data yang dihapus (Admin Only) |
 
 ---
 
 ### C. Purchase Order (Transaksi Pembelian)  
-Base URL: `/api/purchase-orders`
+Base URL: `/purchase-orders`
 
 | Method | Endpoint             | Body (JSON)                              | Deskripsi |
 | ------ | -------------------- | ---------------------------------------- | --------- |
-| POST   | `/`                  | `{ supplier_id, product_id, quantity }`  | Admin membuat pesanan ke supplier |
+| POST   | `/`                  | `{ supplier_id, product_id, quantity }`  | Admin membuat pesanan ke supplier (Admin Only)|
 | PATCH  | `/receive/:id`       | `{ received_quantity? }`                 | **PENTING** Staff/Admin menerima barang. Update stok & log otomatis. |
 | GET    | `/`                  | -                                        | Melihat history pesanan |
+| GET    | `/:id`         | -                     | Mengambil detail pesanan per ID           |
+| PATCH  | `/:id`         | `{ field_to_update }` | Update sebagian (Admin Only)      |
+| DELETE | `/:id`         | -                     | Soft delete (Admin Only)          |
+| GET    | `/deleted`     | -                     | Melihat semua data di "Trash Bin" (Admin Only) |
+| GET    | `/deleted/:id` | -                     | Melihat satu di "Trash Bin" (Admin Only) |
+| POST   | `/restore/:id` | -                     | Mengembalikan data yang dihapus (Admin Only) |
 
 ---
 
 ### D. Inventory Log (Audit Trail)  
-Base URL: `/api/inventory-logs`
+Base URL: `/inventory-logs`
 
 | Method | Endpoint | Body (JSON)                                     | Deskripsi |
 | ------ | -------- | ----------------------------------------------- | --------- |
 | GET    | `/`      | -                                               | Melihat riwayat keluar-masuk barang |
+| GET    | `/:id`   | -                                               | Mengambil detail riwayat keluar-masuk barang per ID           |
 | POST   | `/`      | `{ product_id, type, quantity, reason }`        | Mencatat penyesuaian stok manual (rusak/hilang) |
 
 ---
@@ -223,16 +242,16 @@ Base URL: `/api/inventory-logs`
 {
   "success": true,
   "message": "Login successful",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
+Token disimpan melalui cookie untuk user
 
 ---
 
 ### 2. Menerima Barang (Receive Order)
 Endpoint ini menggunakan transaksi database untuk mengupdate status PO, menambah stok Produk, dan membuat Log.
 
-**Request:** `PATCH /api/purchase-orders/receive/15`  
+**Request:** `PATCH /purchase-orders/receive/15`  
 (Header: `Authorization: Bearer <token>`)
 
 ```json
@@ -256,7 +275,7 @@ Endpoint ini menggunakan transaksi database untuk mengupdate status PO, menambah
 
 ---
 
-### 3. Response Error (Contoh: Validasi Gagal)
+### 3. Response Error (Contoh: Validasi Gagal dengan Joi)
 **Response (400 Bad Request):**
 ```json
 {
@@ -267,16 +286,3 @@ Endpoint ini menggunakan transaksi database untuk mengupdate status PO, menambah
   ]
 }
 ```
-
----
-
-## Catatan Tambahan & Best Practices
-- Gunakan transaksi database (atomic) untuk operasi kompleks seperti menerima PO agar konsistensi stok & log terjaga.  
-- Aktifkan **soft delete** untuk menghindari kehilangan data penting dan mempermudah audit serta pemulihan data.  
-- Simpan secret (DB credentials, JWT secret) di `.env` dan jangan commit ke repo.  
-- Terapkan logging & audit trail (siapa melakukan aksi, timestamp) untuk keperluan pelaporan dan audit.
-
----
-
-## Lisensi
-Tambahkan informasi lisensi proyek Anda di sini (mis. MIT / Apache 2.0), sesuai kebijakan tim atau institusi.

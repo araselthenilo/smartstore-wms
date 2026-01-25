@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: SmartStore WMS (Warehouse and Procurement) API Documentations
-  version: '1.0.0'
+  version: '1.0.1'
   description: "Aplikasi ini adalah layanan backend (REST API) untuk Sistem Manajemen Gudang (WMS). Sistem dirancang untuk menangani operasional logistik mulai dari pengelolaan data master (produk, kategori, supplier), pengadaan barang (procurement), hingga pencatatan keluar-masuk barang (inventory logging) secara real-time. Sistem memisahkan hak akses antara Administrator (manajemen data & keuangan) dan Staff (operasional gudang & penerimaan barang). Keunggulan utama sistem ini meliputi integritas data menggunakan transaksi database atomik, keamanan berbasis token, dan audit trail yang lengkap."
 
 tags:
