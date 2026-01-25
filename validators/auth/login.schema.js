@@ -2,14 +2,13 @@ import Joi from 'joi';
 
 const loginSchema = Joi.object({
     username: Joi.string()
+        .trim()
         .alphanum()
         .max(50)
-        .required()
-        .messages({
-            'string.alphanum': 'Username must only contain alpha-numeric characters'
-        }),
+        .required(),
 
     password: Joi.string()
+        .trim()
         .max(255)
         .required()
 })

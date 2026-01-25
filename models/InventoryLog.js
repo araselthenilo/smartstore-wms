@@ -17,7 +17,7 @@ const InventoryLog = db.define(
                     key: 'product_id'
             },
             onUpdate: 'CASCADE',
-            onDelete: 'CASCADE'
+            onDelete: 'RESTRICT'
         },
         user_id: {
             type: DataTypes.BIGINT,
@@ -27,7 +27,7 @@ const InventoryLog = db.define(
                     key: 'user_id'
             },
             onUpdate: 'CASCADE',
-            onDelete: 'CASCADE'
+            onDelete: 'RESTRICT'
         },
         type: {
             type: DataTypes.ENUM('In', 'Out'),

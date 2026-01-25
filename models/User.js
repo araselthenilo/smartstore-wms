@@ -41,11 +41,6 @@ const User = db.define(
         tableName: 'users',
         paranoid: true,
         underscored: true,
-        scopes: {
-            withoutPassword: {
-                attributes: { exclude: ['password'] }
-            }
-        },
         timestamps: true,
         hooks: {
             beforeCreate: async (user) => {

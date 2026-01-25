@@ -20,6 +20,10 @@ Product.belongsTo(Category, {
     foreignKey: 'category_id'
 });
 
+Product.hasMany(PurchaseOrder, {
+    foreignKey: 'product_id'
+})
+
 Product.hasMany(InventoryLog, {
     foreignKey: 'product_id'
 });
@@ -50,6 +54,10 @@ InventoryLog.belongsTo(User, {
 /* Purchase Order Relationship(s) */
 PurchaseOrder.belongsTo(Supplier, {
     foreignKey: 'supplier_id'
+});
+
+PurchaseOrder.belongsTo(Product, {
+    foreignKey: 'product_id'
 });
 
 PurchaseOrder.belongsTo(User, {

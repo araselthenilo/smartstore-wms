@@ -3,7 +3,6 @@ import { Op } from 'sequelize';
 
 const getAllDeletedUsers = async (req, res) => {
     try {
-        console.log(1);
         const deletedUsers = await User.findAll({
             paranoid: false,
             where: {

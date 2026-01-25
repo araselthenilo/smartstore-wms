@@ -5,18 +5,12 @@ const userSchema = Joi.object({
         .min(3)
         .max(50)
         .alphanum()
-        .required()
-        .messages({
-            'string.alphanum': 'Username must only contain alpha-numeric characters'
-        }),
+        .required(),
     
     name: Joi.string()
         .min(3)
         .max(150)
-        .required()
-        .messages({
-            'string.empty': 'Name cannot be empty'
-        }),
+        .required(),
     
     email: Joi.string()
         .email()
@@ -29,8 +23,8 @@ const userSchema = Joi.object({
         .required(),
 
     role: Joi.string()
-        .required()
         .valid('staff','administrator')
+        .default('staff')
 })
 .options({
     stripUnknown: true

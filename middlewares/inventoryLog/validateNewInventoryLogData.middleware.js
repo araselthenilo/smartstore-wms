@@ -1,6 +1,14 @@
 import inventoryLogSchema from '../../validators/inventoryLog/inventoryLog.schema.js';
+import Product from '../../models/Product.js';
 
 const validateNewInventoryLogData = async (req, res, next) => {
+    if (!req.body) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Missing request body.' 
+        });
+    }
+
     const { error, value } = inventoryLogSchema.validate(req.body, { abortEarly: false });
 
     if (error) {
@@ -10,8 +18,25 @@ const validateNewInventoryLogData = async (req, res, next) => {
         });
     }
 
-    req.validData = value;
-    next();
+    try {
+        const product = await Product.findByPk(value.product_id);
+        
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: `Product with ID ${value.product_id} not found.`
+            });
+        }
+
+        req.validData = value;
+        next();
+    } catch (error) {
+        console.error('Validation Error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Internal Server Error during validation.' 
+        });
+    }
 };
 
 export default validateNewInventoryLogData;

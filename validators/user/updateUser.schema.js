@@ -4,10 +4,7 @@ const updateUserSchema = Joi.object({
     username: Joi.string()
         .min(3)
         .max(50)
-        .alphanum()
-        .messages({
-            'string.alphanum': 'Username must only contain alpha-numeric characters'
-        }),
+        .alphanum(),
     
     name: Joi.string()
         .min(3)

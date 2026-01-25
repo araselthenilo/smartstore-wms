@@ -20,11 +20,11 @@ const categoryRoute = Router();
 
 categoryRoute.get('/deleted', verifyToken, verifyAdminRole, getAllDeletedCategories);
 categoryRoute.get('/deleted/:id', verifyToken, verifyAdminRole, getDeletedCategoryByID);
-categoryRoute.post('/restore/:id', verifyToken, verifyAdminRole, restoreDeletedCategoryByID);
+categoryRoute.patch('/restore/:id', verifyToken, verifyAdminRole, restoreDeletedCategoryByID);
 
 categoryRoute.post('/', verifyToken, verifyAdminRole, validateNewCategoryData, createCategory);
-categoryRoute.get('/', verifyToken, verifyAdminRole, getAllCategories);
-categoryRoute.get('/:id', verifyToken, verifyAdminRole, getCategoryByID);
+categoryRoute.get('/', verifyToken, getAllCategories);
+categoryRoute.get('/:id', verifyToken, getCategoryByID);
 categoryRoute.patch('/:id', verifyToken, verifyAdminRole, validateUpdateCategoryData, updateCategoryByID);
 categoryRoute.delete('/:id', verifyToken, verifyAdminRole, deleteCategoryByID);
 

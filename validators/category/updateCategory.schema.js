@@ -4,15 +4,11 @@ const updateCategorySchema = Joi.object({
     name: Joi.string()
         .min(3)
         .max(150)
-        .trim()
-        .messages({
-            'string.empty': 'Name cannot be empty'
-        }),
+        .trim(),
+
     description: Joi.string()
+        .min(5)
         .trim()
-        .messages({
-            'string.empty': 'Description cannot be empty'
-        })
 })
 .min(1)
 .options({

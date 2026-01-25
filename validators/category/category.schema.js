@@ -5,16 +5,12 @@ const categorySchema = Joi.object({
         .min(3)
         .max(150)
         .trim()
-        .required()
-        .messages({
-            'string.empty': 'Name cannot be empty'
-        }),
+        .required(),
+
     description: Joi.string()
+        .min(5)
         .trim()
         .required()
-        .messages({
-            'string.empty': 'Description cannot be empty'
-        })
 })
 .options({
     stripUnknown: true

@@ -1,0 +1,1481 @@
+openapi: 3.0.3
+info:
+  title: SmartStore WMS (Warehouse and Procurement) API Documentations
+  version: '1.0.0'
+  description: "SmartStore WMS adalah sistem manajemen pergudangan berbasis RESTful API yang dirancang untuk mengoptimalkan operasional inventaris melalui pemisahan peran antara Administrator (manajemen data master dan pengadaan) dan Staff (operasional fisik dan penerimaan barang). Keunggulan utama sistem ini terletak pada penggunaan Sequelize Transactions untuk menjamin integritas data saat pembaruan stok dilakukan secara atomik, penerapan Role-Based Access Control (RBAC) untuk keamanan akses, serta sistem Audit Trail yang mencatat setiap pergerakan barang ke dalam log inventaris yang bersifat immutable. Selain itu, sistem ini mendukung fitur pemulihan data melalui Paranoid Soft Deletes dan menerapkan prinsip middleware dan validator untuk memastikan setiap logika bisnis divalidasi secara ketat sebelum dieksekusi oleh endpoint ke database."
+
+tags:
+  - name: Auth
+    description: Autentikasi dan Profil Pengguna
+  - name: Users
+    description: Manajemen Pengguna (Administrator dan Staff)
+  - name: Categories
+    description: Kategori Produk
+  - name: Suppliers
+    description: Manajemen Pemasok Produk
+  - name: Products
+    description: Operasi terkait data master produk
+  - name: PurchaseOrders
+    description: Operasi terkait pengadaan barang (PO)
+  - name: InventoryLogs
+    description: Riwayat mutasi stok (Stock Card)
+
+paths:
+  # ==========================================
+  # AUTHENTICATION
+  # ==========================================
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Masuk ke dalam sistem (Login)
+      description: Melakukan autentikasi menggunakan username dan password. Mengembalikan token JWT (via cookie/response).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+      responses:
+        '200':
+          description: Login berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Keluar dari sistem (Logout)
+      description: Menghapus sesi login (clear cookie).
+      responses:
+        '200':
+          description: Berhasil logout
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Successfully logged out!
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/profile:
+    get:
+      tags:
+        - Auth
+      summary: Ambil profil pengguna saat ini
+      description: Mengambil data user yang sedang login berdasarkan token yang didapatkan dari proses login.
+      responses:
+        '200':
+          description: Profil ditemukan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  profile:
+                    $ref: '#/components/schemas/User'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ==========================================
+  # USERS
+  # ==========================================
+  /users/deleted:
+    get:
+      tags:
+        - Users
+      summary: Ambil semua user yang terhapus - Khusus Admin
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  deletedUsers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+
+  /users/deleted/{id}:
+    get:
+      tags:
+        - Users
+      summary: Ambil satu user terhapus berdasarkan ID - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  deletedUser:
+                    $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/restore/{id}:
+    patch:
+      tags:
+        - Users
+      summary: Pulihkan satu user yang terhapus - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User berhasil dipulihkan
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users:
+    get:
+      tags:
+        - Users
+      summary: Ambil semua user aktif - Khusus Admin
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags:
+        - Users
+      summary: Buat user baru - Khusus Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInput'
+      responses:
+        '201':
+          description: User berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/User'
+        '409':
+          description: Username/Email sudah dipakai
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Ambil satu user aktif berdasarkan ID - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  user:
+                    $ref: '#/components/schemas/User'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    patch:
+      tags:
+        - Users
+      summary: Perbarui data user - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInput'
+      responses:
+        '200':
+          description: Berhasil diperbarui
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags:
+        - Users
+      summary: Hapus user (soft delete) - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Berhasil dihapus
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ==========================================
+  # CATEGORIES
+  # ==========================================
+  /categories/deleted:
+    get:
+      tags:
+        - Categories
+      summary: Ambil kategori yang terhapus - Khusus Admin
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  deletedCategories:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /categories/deleted/{id}:
+    get:
+      tags:
+        - Categories
+      summary: Ambil kategori terhapus by ID - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  deletedCategory:
+                    $ref: '#/components/schemas/Category'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /categories/restore/{id}:
+    patch:
+      tags:
+        - Categories
+      summary: Pulihkan kategori - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Berhasil dipulihkan
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: Ambil semua kategori aktif
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  categories:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags:
+        - Categories
+      summary: Buat kategori baru - Khusus Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryInput'
+      responses:
+        '201':
+          description: Kategori dibuat
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /categories/{id}:
+    get:
+      tags:
+        - Categories
+      summary: Ambil kategori by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  category:
+                    $ref: '#/components/schemas/Category'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    patch:
+      tags:
+        - Categories
+      summary: Update kategori - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryInput'
+      responses:
+        '200':
+          description: Berhasil diupdate
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - Categories
+      summary: Hapus kategori (soft delete) - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Berhasil dihapus
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ==========================================
+  # SUPPLIERS
+  # ==========================================
+  /suppliers/deleted:
+    get:
+      tags:
+        - Suppliers
+      summary: Ambil supplier terhapus - Khusus Admin
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  deletedSuppliers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Supplier'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /suppliers/deleted/{id}:
+    get:
+      tags:
+        - Suppliers
+      summary: Ambil supplier terhapus by ID - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  deletedSupplier:
+                    $ref: '#/components/schemas/Supplier'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /suppliers/restore/{id}:
+    patch:
+      tags:
+        - Suppliers
+      summary: Pulihkan supplier - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Berhasil dipulihkan
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /suppliers:
+    get:
+      tags:
+        - Suppliers
+      summary: Ambil semua supplier
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  suppliers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Supplier'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags:
+        - Suppliers
+      summary: Buat supplier baru - Khusus Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplierInput'
+      responses:
+        '201':
+          description: Supplier berhasil dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Supplier'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /suppliers/{id}:
+    get:
+      tags:
+        - Suppliers
+      summary: Ambil supplier by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  supplier:
+                    $ref: '#/components/schemas/Supplier'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      tags:
+        - Suppliers
+      summary: Update supplier - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplierInput'
+      responses:
+        '200':
+          description: Berhasil diupdate
+    delete:
+      tags:
+        - Suppliers
+      summary: Hapus supplier (soft delete) - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Berhasil dihapus
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ==========================================
+  # PURCHASE ORDERS
+  # ==========================================
+  /purchase-orders/deleted:
+    get:
+      tags:
+        - PurchaseOrders
+      summary: Ambil semua Purchase Order yang terhapus - Khusus Admin
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  deletedPurchaseOrders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PurchaseOrder'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /purchase-orders/deleted/{id}:
+    get:
+      tags:
+        - PurchaseOrders
+      summary: Ambil Purchase Order terhapus berdasarkan ID - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  deletedPurchaseOrder:
+                    $ref: '#/components/schemas/PurchaseOrder'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /purchase-orders/restore/{id}:
+    patch:
+      tags:
+        - PurchaseOrders
+      summary: Pulihkan Purchase Order yang terhapus - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /purchase-orders:
+    post:
+      tags:
+        - PurchaseOrders
+      summary: Buat Purchase Order baru - Khusus Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderInput'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/PurchaseOrderResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags:
+        - PurchaseOrders
+      summary: Ambil semua Purchase Order
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  purchaseOrders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PurchaseOrder'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /purchase-orders/{id}:
+    get:
+      tags:
+        - PurchaseOrders
+      summary: Ambil Purchase Order berdasarkan ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  purchaseOrder:
+                    $ref: '#/components/schemas/PurchaseOrder'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    patch:
+      tags:
+        - PurchaseOrders
+      summary: Perbarui Purchase Order - Khusus Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderInput'
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - PurchaseOrders
+      summary: Hapus Purchase Order (soft delete) - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /purchase-orders/receive/{id}:
+    patch:
+      tags:
+        - PurchaseOrders
+      summary: Terima barang dari Purchase Order
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceivePurchaseOrderInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      received:
+                        type: integer
+                      current_stock:
+                        type: integer
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ==========================================
+  # INVENTORY LOGS
+  # ==========================================
+  /inventory-logs:
+    post:
+      tags:
+        - InventoryLogs
+      summary: Buat Inventory Log
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryLogInput'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/InventoryLog'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags:
+        - InventoryLogs
+      summary: Ambil semua Inventory Logs
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  inventoryLogs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InventoryLog'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /inventory-logs/{id}:
+    get:
+      tags:
+        - InventoryLogs
+      summary: Ambil Inventory Log berdasarkan ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  inventoryLog:
+                    $ref: '#/components/schemas/InventoryLog'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ==========================================
+  # PRODUCTS
+  # ==========================================
+  /products/deleted:
+    get:
+      tags:
+        - Products
+      summary: Ambil semua produk yang terhapus - Khusus Admin
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  deletedProducts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /products/deleted/{id}:
+    get:
+      tags:
+        - Products
+      summary: Ambil produk terhapus berdasarkan ID - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  deletedProduct:
+                    $ref: '#/components/schemas/Product'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /products/restore/{id}:
+    patch:
+      tags:
+        - Products
+      summary: Pulihkan produk yang terhapus - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Berhasil dipulihkan
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /products:
+    post:
+      tags:
+        - Products
+      summary: Buat produk baru - Khusus Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Product'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags:
+        - Products
+      summary: Ambil semua produk
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  products:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /products/{id}:
+    get:
+      tags:
+        - Products
+      summary: Ambil produk berdasarkan ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  product:
+                    $ref: '#/components/schemas/Product'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    patch:
+      tags:
+        - Products
+      summary: Perbarui produk - Khusus Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Berhasil diperbarui
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - Products
+      summary: Hapus produk (soft delete) - Khusus Admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Berhasil dihapus
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    # --- Auth & User ---
+    LoginInput:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: arasel
+        password:
+          type: string
+          example: password
+
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Successfully logged in!
+        user:
+          type: object
+          properties:
+            user_id:
+              type: integer
+              example: 1
+            username:
+              type: string
+              example: arasel
+            name:
+              type: string
+              example: Arasel
+            role:
+              type: string
+              example: administrator
+
+    User:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          exmaple: 1
+        username:
+          type: string
+          example: arasel
+        name:
+          type: string
+          example: Arasel
+        role:
+          type: string
+          enum: [administrator, staff]
+          example: administrator
+        email:
+          type: string
+          format: email
+          exmaple: araselthenilo@gmail.com
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-01-20 15:40:57
+        updatedAt: 
+          type: string
+          format: date-time
+          exmaple: 2026-01-20 15:40:57
+        deletedAt:
+          type: string
+          format: date-time
+          example: null
+
+    UserInput:
+      type: object
+      required: [username, password, name, role]
+      properties:
+        username:
+          type: string
+          example: arasel
+        password:
+          type: string
+          description: Wajib saat create, opsional saat update (jika ingin ganti password)
+          example: password
+        name:
+          type: string
+          example: Arasel
+        email:
+          type: string
+          format: email
+          example: araselthenilo@gmail.com
+        role:
+          type: string
+          enum: [administrator, staff]
+          example: administrator
+
+    # --- Categories ---
+    Category:
+      type: object
+      properties:
+        category_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Socks
+        description:
+          type: string
+          example: Blah Blah Blah
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+
+    CategoryInput:
+      type: object
+      required: [name, description]
+      properties:
+        name:
+          type: string
+          example: Socks
+        description:
+          type: string
+          example: Blah Blah Blah
+
+    # --- Suppliers ---
+    Supplier:
+      type: object
+      properties:
+        supplier_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Contoh Supplier
+        contact_person:
+          type: string
+          example: +62738533829871
+        email:
+          type: string
+          format: email
+        address:
+          type: string
+          example: alamat apalah
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+
+    SupplierInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: Supplier 1
+        contact_person:
+          type: string
+          example: +832938328383
+        email:
+          type: string
+          format: email
+          example: hdhdh@gmail.com
+        address:
+          type: string
+          example: hdhdhdhd
+
+    InventoryLogInput:
+      type: object
+      required: [product_id, type, quantity]
+      properties:
+        product_id:
+          type: integer
+          example: 1
+        "type":
+          type: string 
+          enum: [In, Out]
+          example: In
+        quantity:
+          type: integer
+          example: 67
+        reason:
+          type: string
+          example: ada deh...
+
+    InventoryLog:
+      type: object
+      properties:
+        inventory_log_id:
+          type: integer
+          example: 1
+        product_id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+          example: 1
+        "type":
+          type: string
+          enum: [In, Out]
+          example: In
+        quantity:
+          type: integer
+          exmaple: 67
+        reason:
+          type: string
+          example: ada deh...
+        createdAt:
+          type: string
+          format: date-time
+
+    ProductInput:
+      type: object
+      required: [category_id, sku, name]
+      properties:
+        category_id:
+          type: integer
+          example: 1
+        sku:
+          type: string
+          example: SKU-67-001
+        name:
+          type: string
+          example: Blue Socks
+        stock_quantity:
+          type: integer
+          example: 0
+        min_stock_level:
+          type: integer
+          example: 0
+
+    Product:
+      type: object
+      properties:
+        product_id:
+          type: integer
+          example: 1
+        category_id:
+          type: integer
+          example: 1
+        sku:
+          type: string
+          example: SKU-67-001
+        name:
+          type: string
+          example: Blue Socks
+        stock_quantity:
+          type: integer
+          example: 0
+        min_stock_level:
+          type: integer
+          example: 0
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+
+    PurchaseOrder:
+      type: object
+      properties:
+        purchase_order_id:
+          type: integer
+          example: 1
+        supplier_id:
+          type: integer
+          example: 1
+        product_id:
+          type: integer
+          example: 1
+        "type":
+          type: string
+          enum: [Pending, Received, Canceled]
+          example: Pending
+        quantity:
+          type: integer
+          example: 10
+        total_price:
+          type: number
+          example: 66.7
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+
+    PurchaseOrderInput:
+      type: object
+      required: [supplier_id, product_id, "type", quantity, total_price]
+      properties:
+        supplier_id:
+          type: integer
+          example: 1
+        product_id:
+          type: integer
+          example: 1
+        "type":
+          type: string
+          enum: [Pending, Received, Canceled]
+          example: Pending
+        quantity:
+          type: integer
+          example: 10
+        total_price:
+          type: number
+          example: 66.7
+
+    PurchaseOrderResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Purchase Order successfully created!
+        data:
+          $ref: '#/components/schemas/PurchaseOrder'
+
+    ReceivePurchaseOrderInput:
+      type: object
+      required: [received_quantity]
+      properties:
+        received_quantity:
+          type: integer
+
+    # --- Global Responses ---
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+
+  responses:
+    InternalError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: Internal Server Error. Please try again later.
+    NotFound:
+      description: Resource tidak ditemukan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Akses ditolak / Login gagal
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

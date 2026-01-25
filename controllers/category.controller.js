@@ -3,7 +3,6 @@ import { Op } from 'sequelize';
 
 const getAllDeletedCategories = async (req, res) => {
     try {
-        console.log(1);
         const deletedCategories = await Category.findAll({
             paranoid: false,
             where: {

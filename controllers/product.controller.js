@@ -99,7 +99,7 @@ const createProduct = async (req, res) => {
     try {
         const createdProduct = await Product.create(req.validData);
 
-        const productResponse = {
+        const userResponse = {
             product_id: createdProduct.product_id,
             category_id: createdProduct.category_id,
             sku: createdProduct.sku,
@@ -111,7 +111,7 @@ const createProduct = async (req, res) => {
         res.status(201).json({
             success: true,
             message: 'Product successfully created!',
-            data: productResponse
+            data: userResponse
         });
     } catch (error) {
         if (error.name === 'SequelizeUniqueConstraintError') {

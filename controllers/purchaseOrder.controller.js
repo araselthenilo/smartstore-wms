@@ -1,5 +1,7 @@
 import PurchaseOrder from '../models/PurchaseOrder.js';
+import InventoryLog from '../models/InventoryLog.js';
 import { Op } from 'sequelize';
+import db from '../utils/db.util.js';
 
 const getAllDeletedPurchaseOrders = async (req, res) => {
     try {
@@ -97,7 +99,10 @@ const restoreDeletedPurchaseOrderByID = async (req, res) => {
 
 const createPurchaseOrder = async (req, res) => {
     try {
-        const createdPurchaseOrder = await PurchaseOrder.create(req.validData);
+        const createdPurchaseOrder = await PurchaseOrder.create({
+            ...req.validData,
+            admin_id: req.user.user_id
+    });
 
         const purchaseOrderResponse = {
             purchase_order_id: createdPurchaseOrder.purchase_order_id,
@@ -113,13 +118,6 @@ const createPurchaseOrder = async (req, res) => {
             data: purchaseOrderResponse
         });
     } catch (error) {
-        if (error.name === 'SequelizeUniqueConstraintError') {
-            return res.status(409).json({
-                success: false,
-                message: 'Purchase Order already exists.'
-            });
-        }
-
         console.error(error);
         res.status(500).json({ 
             success: false,
@@ -227,6 +225,63 @@ const deletePurchaseOrderByID = async (req, res) => {
     }
 };
 
+const receivePurchaseOrder = async (req, res) => {
+    try {
+        const t = await db.transaction();
+        
+        const order = req.validatedOrder;
+        const product = req.validatedProduct;
+
+        const quantityToReceive = (req.validData?.received_quantity) || order.quantity;
+
+        await order.update({ 
+            status: 'received' 
+        }, { 
+            transaction: t 
+        });
+
+        const newStock = Number(product.stock_quantity) + Number(quantityToReceive);
+        await product.update({ 
+            stock_quantity: newStock 
+        }, { 
+            transaction: t 
+        });
+
+        const discrepancyNote = quantityToReceive !== order.quantity 
+            ? ` (The difference is ${quantityToReceive - order.quantity} from original purchase order)` 
+            : "";
+
+        await InventoryLog.create({
+            product_id: order.product_id,
+            user_id: req.user.user_id,
+            type: 'In',
+            quantity: quantityToReceive,
+            reason: `Receiving PO #${order.purchase_order_id}${discrepancyNote}`
+        }, { 
+            transaction: t 
+        });
+
+        await t.commit();
+
+        res.status(200).json({
+            success: true,
+            message: 'Items successfully received and stock quantity updated.',
+            data: {
+                received: quantityToReceive,
+                current_stock: newStock
+            }
+        });
+
+    } catch (error) {
+        await t.rollback();
+        console.error(error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Internal Server Error. Please try again later.'
+        });
+    }
+};
+
 export default {
     getAllDeletedPurchaseOrders,
     getDeletedPurchaseOrderByID,
@@ -235,5 +290,6 @@ export default {
     getAllPurchaseOrders,
     getPurchaseOrderByID,
     updatePurchaseOrderByID,
-    deletePurchaseOrderByID
+    deletePurchaseOrderByID,
+    receivePurchaseOrder
 };

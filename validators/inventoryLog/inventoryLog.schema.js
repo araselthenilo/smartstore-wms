@@ -5,30 +5,22 @@ const inventoryLogSchema = Joi.object({
         .integer()
         .positive()
         .required(),
-    user_id: Joi.number()
-        .integer()
-        .positive()
-        .required(),
+
     type: Joi.string()
         .valid('In', 'Out')
-        .required()
-        .messages({
-            'any.only': 'Tipe log harus "In" atau "Out"'
-        }),
+        .required(),
+
     quantity: Joi.number()
         .integer()
         .positive()
-        .required()
-        .messages({
-            'number.positive': 'Jumlah barang harus lebih besar dari 0'
-        }),
+        .required(),
+
     reason: Joi.string()
         .min(5)
+        .trim()
         .required()
-        .messages({
-            'string.min': 'Alasan harus diisi minimal 5 karakter'
-        })
 })
+.min(1)
 .options({
     stripUnknown: true
 });

@@ -20,11 +20,11 @@ const productRoute = Router();
 
 productRoute.get('/deleted', verifyToken, verifyAdminRole, getAllDeletedProducts);
 productRoute.get('/deleted/:id', verifyToken, verifyAdminRole, getDeletedProductByID);
-productRoute.post('/restore/:id', verifyToken, verifyAdminRole, restoreDeletedProductByID);
+productRoute.patch('/restore/:id', verifyToken, verifyAdminRole, restoreDeletedProductByID);
 
 productRoute.post('/', verifyToken, verifyAdminRole, validateNewProductData, createProduct);
-productRoute.get('/', verifyToken, verifyAdminRole, getAllProducts);
-productRoute.get('/:id', verifyToken, verifyAdminRole, getProductByID);
+productRoute.get('/', verifyToken, getAllProducts);
+productRoute.get('/:id', verifyToken, getProductByID);
 productRoute.patch('/:id', verifyToken, verifyAdminRole, validateUpdateProductData, updateProductByID);
 productRoute.delete('/:id', verifyToken, verifyAdminRole, deleteProductByID);
 

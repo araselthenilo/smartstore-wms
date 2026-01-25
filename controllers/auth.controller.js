@@ -44,6 +44,7 @@ const login = async (req, res) => {
             user: {
                 user_id: user.user_id,
                 username: user.username,
+                name: user.name,
                 role: user.role
             }
         });
@@ -73,7 +74,25 @@ const logout = async (req, res) => {
     }
 };
 
+const getProfile = async (req, res) => {
+    try {
+        const profile = await User.findByPk(req.user.user_id);
+
+        res.status(200).json({
+            success: true,
+            profile
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Internal Server Error. Please try again later.'
+        });
+    }
+}
+
 export default {
     login,
-    logout
+    logout, 
+    getProfile
 };

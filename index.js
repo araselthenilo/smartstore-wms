@@ -20,9 +20,13 @@ for (const key of requiredEnv) {
 }
 
 import db from './utils/db.util.js';
-import express, { json } from 'express';
+
+import express from 'express';
 import cookieParser from 'cookie-parser';
-import swaggerJSDoc from 'swagger-jsdoc';
+
+import fs from 'fs';
+import path from 'path';
+import YAML from 'yaml';
 import swaggerUI from 'swagger-ui-express';
 
 const app = express();
@@ -35,30 +39,22 @@ import supplierRoute from './routes/supplier.route.js';
 import inventoryLogRoute from './routes/inventoryLog.route.js';
 import purchaseOrderRoute from './routes/purchaseOrder.route.js';
 
-app.use(json());
+app.use(express.json());
 app.use(cookieParser());
 
-const options = {
-    definition: {
-        openapi: '3.0.0',
-        info: {
-            title: 'SmartStore WMS (Warehouse and Procurement) API Documentations',
-            version: '0.4.0'
-        },
-        servers: [
-            {
-                url: `http://${process.env.DB_HOST}:${process.env.API_PORT}/`
-            }
-        ]
-    },
-    apis: [
-        './index.js'
-    ]
-}
+const specPath = path.join(process.cwd(), 'docs', 'openapi.yaml');
+const file = fs.readFileSync(specPath, 'utf8');
+const swaggerDocument = YAML.parse(file);
 
-const swaggerSpec = swaggerJSDoc(options);
+swaggerDocument.servers = [
+    {
+        url: `http://${process.env.DB_HOST}:${process.env.API_PORT}/`
+    }
+];
 
-app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerSpec));
+/* API Documention Route */
+app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocument));
+/* End API Documention Route */
 
 /* Routes */
 app.use('/auth', authRoute);

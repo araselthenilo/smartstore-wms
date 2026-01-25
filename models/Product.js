@@ -17,7 +17,7 @@ const Product = db.define(
                 key: 'category_id'
             }, 
             onUpdate: 'CASCADE',
-            onDelete: 'CASCADE'
+            onDelete: 'RESTRICT'
         },
         sku: {
             type: DataTypes.STRING(40),
