@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: SmartStore WMS (Warehouse and Procurement) API Documentations
   version: '1.0.0'
-  description: "SmartStore WMS adalah sistem manajemen pergudangan berbasis RESTful API yang dirancang untuk mengoptimalkan operasional inventaris melalui pemisahan peran antara Administrator (manajemen data master dan pengadaan) dan Staff (operasional fisik dan penerimaan barang). Keunggulan utama sistem ini terletak pada penggunaan Sequelize Transactions untuk menjamin integritas data saat pembaruan stok dilakukan secara atomik, penerapan Role-Based Access Control (RBAC) untuk keamanan akses, serta sistem Audit Trail yang mencatat setiap pergerakan barang ke dalam log inventaris yang bersifat immutable. Selain itu, sistem ini mendukung fitur pemulihan data melalui Paranoid Soft Deletes dan menerapkan prinsip middleware dan validator untuk memastikan setiap logika bisnis divalidasi secara ketat sebelum dieksekusi oleh endpoint ke database."
+  description: "Aplikasi ini adalah layanan backend (REST API) untuk Sistem Manajemen Gudang (WMS). Sistem dirancang untuk menangani operasional logistik mulai dari pengelolaan data master (produk, kategori, supplier), pengadaan barang (procurement), hingga pencatatan keluar-masuk barang (inventory logging) secara real-time. Sistem memisahkan hak akses antara Administrator (manajemen data & keuangan) dan Staff (operasional gudang & penerimaan barang). Keunggulan utama sistem ini meliputi integritas data menggunakan transaksi database atomik, keamanan berbasis token, dan audit trail yang lengkap."
 
 tags:
   - name: Auth
